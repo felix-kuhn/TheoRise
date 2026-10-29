@@ -1,8 +1,9 @@
 # Theories Backend (PoC)
 
-FastAPI backend for the Research Assistant Tauri app. Currently one feature:
-**Theories** - hydrates [is.theorizeit.org](https://is.theorizeit.org) and stores
-each theory's `<div id="bodyContent">` as a local HTML file.
+FastAPI backend for the Research Assistant Tauri app. It hydrates
+[is.theorizeit.org](https://is.theorizeit.org) and stores each theory's
+`<div id="bodyContent">` as a local HTML file. Document ingestion, linking,
+retrieval, and the graph are added in later increments.
 
 ## Layout
 
@@ -10,10 +11,10 @@ each theory's `<div id="bodyContent">` as a local HTML file.
     +-- pyproject.toml
     +-- data/                      # runtime data (git-ignored)
     |   +-- theories/              # scraped theory HTML
-    |   +-- databases/             # future SQLite / vector / graph stores
+    |   +-- logs/app.log           # JSON log file (redacted)
     +-- scripts/                   # dev server + smoke check
     +-- app/
-    |   +-- main.py  config.py  deps.py  security.py
+    |   +-- main.py  config.py  deps.py  security.py  cli.py
     |   +-- api/                   # health, config, jobs, wiki, files, search, graph, links, eval
     |   +-- core/                  # settings, logging, errors, ids
     |   +-- gateway/               # LLM, embeddings, rerank, cache, capabilities
@@ -24,61 +25,54 @@ each theory's `<div id="bodyContent">` as a local HTML file.
     +-- tests/
         +-- unit/  integration/  fixtures/
 
-Only the wiki/theories flow is implemented so far. The other packages are
-scaffolding for the increments described in `../docs/plan`.
+Only the wiki/theories flow is implemented so far.
 
-## Running (development)
+## Running
 
-Uses the existing `poc-backend` conda environment (tiktoken is installed there).
+Everything runs in the existing `poc-backend` conda environment:
 
-    scripts/dev.sh          # serves on 127.0.0.1:8766 with --reload
+    conda run -n poc-backend python -m app --port 0 --token dev-token --data-dir ./data
 
-The Tauri frontend talks to `http://127.0.0.1:8766` (see `../src/lib/backend.js`).
-
-## Data
-
-Scraped theories land in `data/theories/`, which is git-ignored because it can
-be regenerated with a hydration run:
-
-    data/
-    +-- theories/
-    |   +-- Absorptive_capacity_theory_20261028T164500Z.html
-    |   +-- Activity_Theory_20261028T164500Z.html
-    +-- theories_index.json      # per-run metadata (titles, URLs, tokens)
-
-- One file per theory, named `<slug>_<run timestamp>.html`.
-- Each "Hydrate" run gets a new timestamp, so previous versions are kept.
-- `theories_index.json` records what was scraped per run (last 20 runs).
-
-Small sample wiki HTML and a sample PDF for tests live in `tests/fixtures/` and
-are committed, unlike the runtime `data/` tree.
+`--port 0` picks a free port; the CLI prints one JSON line `{"port": N}` once
+ready. For a fixed port during development use `scripts/dev.sh` (port 8766).
+The token can also come from `APP_AUTH_TOKEN`.
 
 ## API
 
+All routes require `Authorization: Bearer <token>`; the health route is also
+protected.
+
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/health` | Status + file count |
+| GET | `/health`, `/api/health` | Status + file count |
 | POST | `/v1/theories/hydrate` | Start a background scrape (202, returns `job_id`) |
 | GET | `/v1/theories/jobs/{job_id}` | Job status: `stage`, `progress`, `detail`, `result` |
 | GET | `/v1/theories` | All theories (latest file each) with title, url, file, tokens |
 | GET | `/v1/theories/{slug}` | One theory incl. the stored `bodyContent` HTML fragment |
 
-Token counts use tiktoken (`cl100k_base` by default, `THEORIES_TIKTOKEN_ENCODING`).
+Errors use the uniform shape `{code, message, details}`. Logs are JSON lines in
+`<data-dir>/logs/app.log` with API-key-style values redacted.
 
-## Tests
+## Tests and tooling
 
     conda run -n poc-backend python -m pytest
+    conda run -n poc-backend ruff check app tests
+    conda run -n poc-backend mypy app
 
-Unit tests cover the wiki scraper and the in-memory job queue. Integration
-tests exercise the API against a temporary data directory (no network needed).
+Versions are pinned in `pyproject.toml`; the dev extras (`pytest`,
+`pytest-asyncio`, `ruff`, `mypy`) are installed in `poc-backend`.
 
-## Notes for the future sidecar
+## Data
 
-When bundled as a Tauri sidecar, the app will be spawned by the desktop app
-instead of started manually. Keep in mind:
+Scraped theories land in `data/theories/`, git-ignored because they can be
+regenerated. One file per theory is named `<slug>_<run timestamp>.html`, and
+`theories_index.json` records per-run metadata (last 20 runs). Sample wiki
+HTML and a sample PDF live in `tests/fixtures/`.
 
-- The port is configurable (`THEORIES_PORT`); pin it so the frontend
-  `BACKEND_URL` constant in `../src/lib/backend.js` stays correct.
-- Data is written under `<src-backend>/data` by default (`THEORIES_DATA_DIR`
-  overrides); point it at the Tauri app data dir for production.
-- The process is a single uvicorn instance; no state other than `data/`.
+## Sidecar notes
+
+When bundled, Tauri spawns this app itself: it passes a random `--token` and a
+data dir under the Tauri app data directory, reads the `{"port": N}` line from
+stdout, and kills the child on exit. Production sidecar packaging (PyInstaller)
+is planned for increment 13; until then set `POC_BACKEND_BINARY` when running
+in `POC_BACKEND_MODE=prod`.

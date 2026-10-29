@@ -27,3 +27,25 @@ A running desktop shell whose React UI calls an authenticated FastAPI backend an
 ## Acceptance
 - `npm run tauri dev` opens the window, badge shows "Backend OK".
 - `scripts/ci.sh` passes.
+
+## Checklist (increment 01)
+
+- [x] Repo layout from `00_OVERVIEW.md` present and respected.
+- [x] Backend: `create_app()` factory, pinned `pyproject.toml` deps, CLI with
+  `--port 0` port JSON, bearer auth, CORS allow-list, `/api/health`, JSON
+  logging with redaction, uniform errors.
+- [x] Tauri: `start_backend` (dev interpreter + prod sidecar path),
+  `get_backend_info()`, child killed on exit, HTTP scope restricted to
+  `127.0.0.1`.
+- [x] Frontend: authenticated API client, sidebar shell with placeholder
+  routes, backend status badge via TanStack Query.
+- [x] Tooling: ruff, mypy, pytest, eslint, prettier, Vitest, `scripts/ci.sh`.
+- [x] Tests: backend health/auth/CLI (18 passed), frontend token + badge
+  states (5 passed).
+- [x] `scripts/ci.sh` passes; `npm run build`, `bun run lint`,
+  `bun run test` green.
+- [x] `docs/CHANGELOG.md` updated.
+
+Production sidecar packaging (PyInstaller + `bundle.externalBin`) is deferred
+to increment 13; the Rust launch path is already wired via
+`POC_BACKEND_BINARY`.

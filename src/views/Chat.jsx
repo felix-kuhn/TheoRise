@@ -38,16 +38,10 @@ function ChatMessage({ message }) {
   }
 
   return (
-    <article
-      className={`flex gap-3 ${
-        isUser ? "flex-row-reverse" : "flex-row"
-      }`}
-    >
+    <article className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
       <div
         className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground"
+          isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
         }`}
       >
         {isUser ? <User className="size-4" /> : <Bot className="size-4" />}
@@ -55,14 +49,10 @@ function ChatMessage({ message }) {
 
       <div
         className={`group max-w-[80%] rounded-xl px-4 py-3 text-sm leading-6 ${
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground"
+          isUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
         }`}
       >
-        <p className="whitespace-pre-wrap break-words">
-          {message.content}
-        </p>
+        <p className="whitespace-pre-wrap break-words">{message.content}</p>
 
         {!isUser && (
           <div className="mt-2 flex justify-end opacity-0 transition-opacity group-hover:opacity-100">
@@ -102,9 +92,7 @@ export default function Chat() {
   const activeChatId = useAppStore((state) => state.activeChatId);
 
   const messages = useAppStore((state) => {
-    const activeChat = state.chats.find(
-      (chat) => chat.id === state.activeChatId
-    );
+    const activeChat = state.chats.find((chat) => chat.id === state.activeChatId);
 
     return activeChat?.messages ?? EMPTY_MESSAGES;
   });
@@ -126,9 +114,7 @@ export default function Chat() {
   const modelIsConfigured = Boolean(providerConfig?.model?.trim());
 
   const providerLabel =
-    llm.provider === "google"
-      ? "Google Gemini"
-      : "OpenAI / OpenAI-compatible";
+    llm.provider === "google" ? "Google Gemini" : "OpenAI / OpenAI-compatible";
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
@@ -170,11 +156,7 @@ export default function Chat() {
       appendMessage(createMessage("assistant", answer));
     } catch (error) {
       if (requestId === requestIdRef.current) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "The LLM request failed."
-        );
+        setError(error instanceof Error ? error.message : "The LLM request failed.");
       }
     } finally {
       if (requestId === requestIdRef.current) {
@@ -185,9 +167,7 @@ export default function Chat() {
 
   function handleKeyDown(event) {
     const isSubmitShortcut =
-      event.key === "Enter" &&
-      !event.shiftKey &&
-      !event.nativeEvent.isComposing;
+      event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing;
 
     if (!isSubmitShortcut) {
       return;
@@ -226,11 +206,7 @@ export default function Chat() {
           )}
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleNewChat}
-        >
+        <Button variant="outline" size="sm" onClick={handleNewChat}>
           <MessageSquarePlus className="mr-2 size-4" />
           New chat
         </Button>
@@ -245,8 +221,8 @@ export default function Chat() {
               <h3 className="font-semibold">Start a conversation</h3>
 
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                Ask a question, paste an excerpt, or discuss a document from
-                your research workspace.
+                Ask a question, paste an excerpt, or discuss a document from your research
+                workspace.
               </p>
             </div>
           )}
@@ -298,8 +274,8 @@ export default function Chat() {
         </div>
 
         <p className="mx-auto mt-2 max-w-4xl text-xs text-muted-foreground">
-          Messages are saved automatically. Press Enter to send and
-          Shift+Enter for a new line.
+          Messages are saved automatically. Press Enter to send and Shift+Enter for a new
+          line.
         </p>
       </footer>
     </section>

@@ -1,10 +1,7 @@
 import { useState } from "react";
 
 import { testLlmConnection } from "@/lib/llm";
-import {
-  DEFAULT_BASE_URLS,
-  useAppStore,
-} from "@/stores/app-store";
+import { DEFAULT_BASE_URLS, useAppStore } from "@/stores/app-store";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -65,20 +62,13 @@ const providerDetails = {
   },
 };
 
-
-
-
 export default function Settings() {
   const llm = useAppStore((state) => state.llm);
 
   const setProvider = useAppStore((state) => state.setProvider);
   const updateLlmConfig = useAppStore((state) => state.updateLlmConfig);
-  const updateProviderConfig = useAppStore(
-    (state) => state.updateProviderConfig
-  );
-  const resetProviderBaseUrl = useAppStore(
-    (state) => state.resetProviderBaseUrl
-  );
+  const updateProviderConfig = useAppStore((state) => state.updateProviderConfig);
+  const resetProviderBaseUrl = useAppStore((state) => state.resetProviderBaseUrl);
 
   const [isTesting, setIsTesting] = useState(false);
   const [message, setMessage] = useState("");
@@ -99,8 +89,7 @@ export default function Settings() {
       setMessage(`Connection successful: ${result}`);
     } catch (error) {
       setMessage(
-        `Connection failed: ${error instanceof Error ? error.message : String(error)
-        }`
+        `Connection failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     } finally {
       setIsTesting(false);
@@ -132,8 +121,8 @@ export default function Settings() {
         <CardHeader>
           <CardTitle>LLM provider</CardTitle>
           <CardDescription>
-            Changes are saved automatically and restored when the application
-            is opened again.
+            Changes are saved automatically and restored when the application is opened
+            again.
           </CardDescription>
         </CardHeader>
 
@@ -153,13 +142,9 @@ export default function Settings() {
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="openai">
-                  OpenAI / OpenAI-compatible
-                </SelectItem>
+                <SelectItem value="openai">OpenAI / OpenAI-compatible</SelectItem>
 
-                <SelectItem value="google">
-                  Google Gemini
-                </SelectItem>
+                <SelectItem value="google">Google Gemini</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -190,9 +175,7 @@ export default function Settings() {
               </Button>
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              {details.baseUrlHint}
-            </p>
+            <p className="text-xs text-muted-foreground">{details.baseUrlHint}</p>
           </div>
 
           <div className="space-y-2">
@@ -221,9 +204,7 @@ export default function Settings() {
                   </SelectItem>
                 ))}
 
-                <SelectItem value="custom">
-                  Custom model…
-                </SelectItem>
+                <SelectItem value="custom">Custom model…</SelectItem>
               </SelectContent>
             </Select>
 
@@ -269,8 +250,8 @@ export default function Settings() {
             </a>
 
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              Temporary development setup: API keys are persisted in local
-              storage and are not encrypted.
+              Temporary development setup: API keys are persisted in local storage and are
+              not encrypted.
             </p>
           </div>
 
@@ -289,9 +270,7 @@ export default function Settings() {
               max={2}
               step={0.1}
               value={[llm.temperature]}
-              onValueChange={([temperature]) =>
-                updateLlmConfig({ temperature })
-              }
+              onValueChange={([temperature]) => updateLlmConfig({ temperature })}
             />
           </div>
 
@@ -313,17 +292,11 @@ export default function Settings() {
         </CardContent>
 
         <CardFooter className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            onClick={handleTestConnection}
-            disabled={isTesting}
-          >
+          <Button variant="outline" onClick={handleTestConnection} disabled={isTesting}>
             {isTesting ? "Testing…" : "Test connection"}
           </Button>
 
-          {message && (
-            <p className="text-sm text-muted-foreground">{message}</p>
-          )}
+          {message && <p className="text-sm text-muted-foreground">{message}</p>}
         </CardFooter>
       </Card>
     </section>

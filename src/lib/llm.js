@@ -25,10 +25,7 @@ function getActiveConfig() {
     provider: llm.provider,
     model: providerConfig.model.trim(),
     apiKey: providerConfig.apiKey.trim(),
-    baseUrl: normalizeBaseUrl(
-      providerConfig.baseUrl,
-      DEFAULT_BASE_URLS[llm.provider]
-    ),
+    baseUrl: normalizeBaseUrl(providerConfig.baseUrl, DEFAULT_BASE_URLS[llm.provider]),
     temperature: llm.temperature,
     systemPrompt: llm.systemPrompt,
   };

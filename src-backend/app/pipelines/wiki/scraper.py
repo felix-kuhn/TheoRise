@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -62,11 +62,13 @@ def extract_theory_links(html: str, cfg: AppConfig) -> list[TheoryLink]:
     links: list[TheoryLink] = []
     seen: set[str] = set()
     for a in ul.find_all("a", href=True):
-        href = a["href"]
-        if not href.startswith("/wiki/"):
+        href = a.get("href")
+        if not isinstance(href, str) or not href.startswith("/wiki/"):
             continue
         page_name = href[len("/wiki/"):]
-        title = (a.get("title") or a.get_text(strip=True) or page_name)
+        title = a.get("title")
+        if not isinstance(title, str):
+            title = a.get_text(strip=True) or page_name
         title = re.sub(r"\s+", " ", title).strip()
         slug = sanitize_slug(page_name)
         if slug in seen:
@@ -103,13 +105,13 @@ def _absolutize_fragment(fragment: str, base_url: str) -> str:
     for tag in soup.find_all(True):
         for attr in _URL_ATTRS:
             value = tag.get(attr)
-            if value and not value.startswith(_NON_URL_SCHEMES):
+            if isinstance(value, str) and value and not value.startswith(_NON_URL_SCHEMES):
                 tag[attr] = urljoin(base, value)
         srcset = tag.get("srcset")
-        if srcset:
+        if isinstance(srcset, str):
             tag["srcset"] = _absolutize_srcset(srcset, base)
         style = tag.get("style")
-        if style and "url(" in style:
+        if isinstance(style, str) and "url(" in style:
             tag["style"] = re.sub(
                 r"""url\(\s*(['"]?)(?!data:|https?:|//)([^'()]+)\1\s*\)""",
                 lambda m: f"url({m.group(1)}{urljoin(base, m.group(2))}{m.group(1)})",
@@ -162,7 +164,7 @@ def count_tokens(text: str, cfg: AppConfig) -> int:
 
 
 def _timestamp() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
 def run_hydration(cfg: AppConfig, theories_dir: Path, job) -> dict:

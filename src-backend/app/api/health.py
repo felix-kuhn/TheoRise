@@ -11,6 +11,15 @@ router = APIRouter()
 
 @router.get("/health")
 def health(ctx: AppContext = Depends(get_context)) -> dict:
+    return _health_payload(ctx)
+
+
+@router.get("/api/health")
+def api_health(ctx: AppContext = Depends(get_context)) -> dict:
+    return _health_payload(ctx)
+
+
+def _health_payload(ctx: AppContext) -> dict:
     file_count = len(list(ctx.theories_dir.glob("*.html"))) if ctx.theories_dir.exists() else 0
     return {
         "status": "ok",

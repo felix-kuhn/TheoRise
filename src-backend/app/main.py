@@ -12,9 +12,13 @@ from .core.logging import setup_logging
 from .deps import AppContext
 
 
-def create_app(data_dir: str | None = None) -> FastAPI:
-    setup_logging()
-    ctx = AppContext(data_dir or default_data_dir())
+def create_app(
+    data_dir: str | None = None,
+    auth_token: str | None = None,
+) -> FastAPI:
+    resolved_data_dir = data_dir or str(default_data_dir())
+    setup_logging(resolved_data_dir)
+    ctx = AppContext(resolved_data_dir, auth_token=auth_token)
     app = FastAPI(
         title="theories-backend",
         version=__version__,
@@ -22,11 +26,13 @@ def create_app(data_dir: str | None = None) -> FastAPI:
     )
     app.state.ctx = ctx
     app.include_router(api_router)
-    # The frontend (vite dev server and the Tauri webview) calls this API
-    # cross-origin; allow it while the backend is a local dev/sidecar process.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[
+            "tauri://localhost",
+            "http://localhost:1420",
+            "http://tauri.localhost",
+        ],
         allow_methods=["*"],
         allow_headers=["*"],
     )

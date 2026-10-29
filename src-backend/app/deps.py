@@ -2,25 +2,31 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+import secrets
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import Request
 
-from .config import AppConfig, load_config
+from .config import default_data_dir, load_config
 from .jobs.queue import JobRegistry
 
 
 class AppContext:
     """Owns all long-lived state for one running instance."""
 
-    def __init__(self, data_dir: str | Path | None = None):
-        self.data_dir = Path(data_dir).expanduser()
+    def __init__(
+        self,
+        data_dir: str | Path | None = None,
+        auth_token: str | None = None,
+    ):
+        self.data_dir = Path(data_dir or default_data_dir()).expanduser()
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.theories_dir = self.data_dir / "theories"
         self.index_path = self.data_dir / "theories_index.json"
         self.cfg = load_config(self.data_dir)
         self.jobs = JobRegistry()
+        self.auth_token = auth_token or secrets.token_urlsafe(32)
         # file path -> (mtime, token count); recomputed when the file changes
         self._token_cache: dict[Path, tuple[float, int]] = {}
 
@@ -44,7 +50,7 @@ class AppContext:
         index["runs"].append(
             {
                 "timestamp": timestamp,
-                "at": datetime.now(timezone.utc).isoformat(),
+                "at": datetime.now(UTC).isoformat(),
                 "files": files,
             }
         )
