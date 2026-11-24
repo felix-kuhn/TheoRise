@@ -15,9 +15,25 @@ linking, retrieval, and the knowledge graph are added in later increments.
 
 ## Prerequisites
 
-- The existing `poc-backend` conda environment (Python 3.12). The backend is
-  never run with system Python.
+- A `poc-backend` conda environment with Python 3.12. The backend is never run
+  with system Python.
 - `bun` for the frontend and `cargo` for the Tauri shell.
+
+## Backend setup (conda)
+
+The backend requires Python 3.12. Create the `poc-backend` environment and
+install the pinned dependencies from `requirements.txt`:
+
+    conda create -n poc-backend python=3.12 -y
+    conda run -n poc-backend python -m pip install -r requirements.txt
+
+For interactive work, activate the environment and install from the repo root:
+
+    conda activate poc-backend
+    python -m pip install -r requirements.txt
+
+`requirements.txt` pins the runtime dependencies plus the test and lint tooling
+(`pytest`, `ruff`, `mypy`) used by `scripts/ci.sh`.
 
 ## Development
 

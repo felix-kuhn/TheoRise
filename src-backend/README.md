@@ -69,8 +69,9 @@ are also mounted under `/v1/config`.
     conda run -n poc-backend ruff check app tests
     conda run -n poc-backend mypy app
 
-Versions are pinned in `pyproject.toml`; the dev extras (`pytest`,
-`pytest-asyncio`, `ruff`, `mypy`) are installed in `poc-backend`.
+Versions are pinned in `../requirements.txt` (mirrored in `pyproject.toml`);
+the dev extras (`pytest`, `pytest-asyncio`, `ruff`, `mypy`) are installed in
+`poc-backend`.
 
 ## Data
 
