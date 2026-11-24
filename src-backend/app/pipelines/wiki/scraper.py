@@ -159,8 +159,13 @@ def title_from_html(fragment: str) -> str | None:
 
 
 def count_tokens(text: str, cfg: AppConfig) -> int:
-    enc = tiktoken.get_encoding(cfg.tokens.encoding)
-    return len(enc.encode(text))
+    try:
+        enc = tiktoken.get_encoding(cfg.tokens.encoding)
+        return len(enc.encode(text))
+    except Exception:
+        # The BPE data is downloaded on first use. Research machines may be
+        # offline, so keep the count deterministic instead of failing a job.
+        return max(1, len(text) // 4)
 
 
 def _timestamp() -> str:

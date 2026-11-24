@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CI for increment 01. All backend commands run inside the existing
+# CI for increments 01-02. All backend commands run inside the existing
 # poc-backend conda environment (see docs/plan/00_OVERVIEW.md).
 set -euo pipefail
 

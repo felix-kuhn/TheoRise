@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { apiGet, getHealth } from "./client";
+import { apiGet, apiPut, getHealth } from "./client";
 
 function mockFetchResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -51,5 +51,16 @@ describe("api client", () => {
       code: "backend_unreachable",
       reachable: false,
     });
+  });
+
+  it("sends PUT requests with JSON bodies", async () => {
+    globalThis.fetch.mockResolvedValue(mockFetchResponse({ saved: true }));
+
+    await apiPut("/api/config", { chat: { model: "chat-v2" } });
+
+    const [url, options] = globalThis.fetch.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/api/config");
+    expect(options.method).toBe("PUT");
+    expect(JSON.parse(options.body)).toEqual({ chat: { model: "chat-v2" } });
   });
 });

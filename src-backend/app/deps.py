@@ -9,7 +9,9 @@ from pathlib import Path
 from fastapi import Request
 
 from .config import default_data_dir, load_config
+from .gateway.gateway import Gateway
 from .jobs.queue import JobRegistry
+from .services.config import ConfigService
 
 
 class AppContext:
@@ -25,6 +27,8 @@ class AppContext:
         self.theories_dir = self.data_dir / "theories"
         self.index_path = self.data_dir / "theories_index.json"
         self.cfg = load_config(self.data_dir)
+        self.config_service = ConfigService(self.data_dir)
+        self.gateway = Gateway(self.config_service)
         self.jobs = JobRegistry()
         self.auth_token = auth_token or secrets.token_urlsafe(32)
         # file path -> (mtime, token count); recomputed when the file changes
@@ -75,3 +79,11 @@ class AppContext:
 def get_context(request: Request) -> AppContext:
     """FastAPI dependency resolving the app's shared context."""
     return request.app.state.ctx
+
+
+def get_config_service(request: Request) -> ConfigService:
+    return request.app.state.ctx.config_service
+
+
+def get_gateway(request: Request) -> Gateway:
+    return request.app.state.ctx.gateway

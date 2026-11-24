@@ -15,6 +15,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from ..security import require_auth
+from .chat import router as chat_router
 from .config import router as config_router
 from .eval import router as eval_router
 from .files import router as files_router
@@ -28,6 +29,8 @@ from .wiki import router as wiki_router
 api_router = APIRouter(dependencies=[Depends(require_auth)])
 api_router.include_router(health_router, tags=["health"])
 api_router.include_router(wiki_router, prefix="/v1/theories", tags=["wiki"])
+api_router.include_router(chat_router, prefix="/api/chat", tags=["chat"])
+api_router.include_router(config_router, prefix="/api/config", tags=["config"])
 api_router.include_router(config_router, prefix="/v1/config", tags=["config"])
 api_router.include_router(jobs_router, prefix="/v1/jobs", tags=["jobs"])
 api_router.include_router(files_router, prefix="/v1/files", tags=["files"])

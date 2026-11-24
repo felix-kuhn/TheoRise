@@ -1,31 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-export const DEFAULT_BASE_URLS = {
-  openai: "https://api.openai.com/v1",
-  google: "https://generativelanguage.googleapis.com",
-};
-
-const defaultLlmState = {
-  provider: "openai",
-  temperature: 0.2,
-  systemPrompt: "You are a helpful research assistant.",
-
-  providers: {
-    openai: {
-      apiKey: "",
-      model: "",
-      baseUrl: DEFAULT_BASE_URLS.openai,
-    },
-
-    google: {
-      apiKey: "",
-      model: "",
-      baseUrl: DEFAULT_BASE_URLS.google,
-    },
-  },
-};
-
 function chatTitleFromMessage(message) {
   const text = message.content.trim().replace(/\s+/g, " ");
 
@@ -39,8 +14,6 @@ function chatTitleFromMessage(message) {
 export const useAppStore = create(
   persist(
     (set) => ({
-      llm: defaultLlmState,
-
       // Persisted chat records.
       chats: [],
 
@@ -50,50 +23,6 @@ export const useAppStore = create(
        * starts on a fresh empty chat after every restart.
        */
       activeChatId: null,
-
-      setProvider: (provider) =>
-        set((state) => ({
-          llm: {
-            ...state.llm,
-            provider,
-          },
-        })),
-
-      updateLlmConfig: (patch) =>
-        set((state) => ({
-          llm: {
-            ...state.llm,
-            ...patch,
-          },
-        })),
-
-      updateProviderConfig: (provider, patch) =>
-        set((state) => ({
-          llm: {
-            ...state.llm,
-            providers: {
-              ...state.llm.providers,
-              [provider]: {
-                ...state.llm.providers[provider],
-                ...patch,
-              },
-            },
-          },
-        })),
-
-      resetProviderBaseUrl: (provider) =>
-        set((state) => ({
-          llm: {
-            ...state.llm,
-            providers: {
-              ...state.llm.providers,
-              [provider]: {
-                ...state.llm.providers[provider],
-                baseUrl: DEFAULT_BASE_URLS[provider],
-              },
-            },
-          },
-        })),
 
       /*
        * Adds a message to the active chat.
@@ -162,13 +91,15 @@ export const useAppStore = create(
       name: "research-assistant-store",
       storage: createJSONStorage(() => localStorage),
 
-      version: 2,
+      version: 3,
 
       /*
        * Migrates the old single "messages" history to one stored chat.
        * This preserves the conversation you created before History existed.
        */
       migrate: (persistedState, version) => {
+        let migrated = persistedState;
+
         if (version < 2) {
           const oldMessages = persistedState.messages || [];
 
@@ -185,14 +116,20 @@ export const useAppStore = create(
                 ]
               : [];
 
-          return {
+          migrated = {
             ...persistedState,
             chats: migratedChats,
             activeChatId: null,
           };
         }
 
-        return persistedState;
+        if (version < 3) {
+          const withoutLlm = { ...migrated };
+          delete withoutLlm.llm;
+          migrated = withoutLlm;
+        }
+
+        return migrated;
       },
 
       /*
@@ -200,7 +137,6 @@ export const useAppStore = create(
        * Therefore, startup always displays a new empty Chat view.
        */
       partialize: (state) => ({
-        llm: state.llm,
         chats: state.chats,
       }),
     },

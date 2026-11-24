@@ -124,6 +124,13 @@ export const apiPost = (path, body, options = {}) =>
     ...options,
   });
 
+export const apiPut = (path, body, options = {}) =>
+  apiRequest(path, {
+    method: "PUT",
+    body: body == null ? undefined : JSON.stringify(body),
+    ...options,
+  });
+
 export const getHealth = () => apiGet("/api/health");
 
 export async function streamSse(path, { onEvent, signal } = {}) {

@@ -50,6 +50,10 @@ eslint, Prettier, Vitest, and the Vite build.
 
 ## Status
 
-Increment 01 is complete: authenticated backend with health endpoint, JSON
-logging, uniform errors, CLI port discovery, Tauri process management, and the
-React app shell with backend status badge. See `docs/CHANGELOG.md`.
+Increments 01 and 02 are complete. The backend has an authenticated health
+endpoint, JSON logging, uniform errors, CLI port discovery, and Tauri process
+management. Runtime model configuration is stored server-side (SQLite settings
+plus OS keychain for API keys), and all model calls go through the FastAPI
+gateway for chat, embeddings, reranking, caching, retries, and token budgets.
+The Settings UI exposes per-role configuration and connection tests. See
+`docs/CHANGELOG.md`.

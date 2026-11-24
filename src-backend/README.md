@@ -3,7 +3,8 @@
 FastAPI backend for the Research Assistant Tauri app. It hydrates
 [is.theorizeit.org](https://is.theorizeit.org) and stores each theory's
 `<div id="bodyContent">` as a local HTML file. Document ingestion, linking,
-retrieval, and the graph are added in later increments.
+retrieval, and the graph are added in later increments. Runtime configuration
+and the LLM/embedding/rerank gateway are implemented in increment 02.
 
 ## Layout
 
@@ -18,6 +19,7 @@ retrieval, and the graph are added in later increments.
     |   +-- api/                   # health, config, jobs, wiki, files, search, graph, links, eval
     |   +-- core/                  # settings, logging, errors, ids
     |   +-- gateway/               # LLM, embeddings, rerank, cache, capabilities
+    |   +-- services/              # config service + OS keychain key vault
     |   +-- stores/                # sqlite, vector, graph + interfaces.py
     |   +-- pipelines/             # wiki, docs, extraction, resolution, linking, retrieval
     |   +-- jobs/                  # queue, runner, stages
@@ -25,7 +27,8 @@ retrieval, and the graph are added in later increments.
     +-- tests/
         +-- unit/  integration/  fixtures/
 
-Only the wiki/theories flow is implemented so far.
+Implemented so far: wiki/theories hydration, runtime configuration, and the
+model gateway.
 
 ## Running
 
@@ -49,9 +52,16 @@ protected.
 | GET | `/v1/theories/jobs/{job_id}` | Job status: `stage`, `progress`, `detail`, `result` |
 | GET | `/v1/theories` | All theories (latest file each) with title, url, file, tokens |
 | GET | `/v1/theories/{slug}` | One theory incl. the stored `bodyContent` HTML fragment |
+| GET | `/api/config` | Runtime config with masked API keys (`api_key_set`) |
+| PUT | `/api/config` | Validate and persist config; API keys go to the OS keychain |
+| POST | `/api/config/test` | Probe one or all roles; returns latency and detected capabilities |
+| GET | `/api/config/models` | List models for a role via `{base_url}/models` |
+| GET | `/api/config/network-status` | Which endpoints are loopback/private (offline hint) |
+| POST | `/api/chat` | Chat completion through the configured `chat` role |
 
 Errors use the uniform shape `{code, message, details}`. Logs are JSON lines in
-`<data-dir>/logs/app.log` with API-key-style values redacted.
+`<data-dir>/logs/app.log` with API-key-style values redacted. The config routes
+are also mounted under `/v1/config`.
 
 ## Tests and tooling
 

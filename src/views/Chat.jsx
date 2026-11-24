@@ -8,7 +8,8 @@ import {
   User,
 } from "lucide-react";
 
-import { generateLlmText } from "@/lib/llm";
+import { sendChat } from "@/api/llm";
+import { useRuntimeConfig } from "@/hooks/use-runtime-config";
 import { useAppStore } from "@/stores/app-store";
 
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,7 @@ export default function Chat() {
   const appendMessage = useAppStore((state) => state.appendMessage);
   const startNewChat = useAppStore((state) => state.startNewChat);
 
-  const llm = useAppStore((state) => state.llm);
+  const { data: runtimeConfig } = useRuntimeConfig();
 
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -109,12 +110,8 @@ export default function Chat() {
   const bottomRef = useRef(null);
   const requestIdRef = useRef(0);
 
-  const providerConfig = llm.providers[llm.provider];
-
-  const modelIsConfigured = Boolean(providerConfig?.model?.trim());
-
-  const providerLabel =
-    llm.provider === "google" ? "Google Gemini" : "OpenAI / OpenAI-compatible";
+  const modelIsConfigured = Boolean(runtimeConfig?.chat?.model?.trim());
+  const providerLabel = runtimeConfig?.chat?.model ?? "";
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
@@ -147,7 +144,8 @@ export default function Chat() {
 
       appendMessage(userMessage);
 
-      const answer = await generateLlmText(providerMessages);
+      const response = await sendChat(providerMessages);
+      const answer = response.content;
 
       if (requestId !== requestIdRef.current) {
         return;
@@ -195,7 +193,7 @@ export default function Chat() {
 
           <p className="mt-1 text-sm text-muted-foreground">
             {modelIsConfigured
-              ? `Using ${providerLabel} · ${providerConfig.model}`
+              ? `Using ${providerLabel}`
               : "Configure an LLM provider and model in Settings to begin."}
           </p>
 

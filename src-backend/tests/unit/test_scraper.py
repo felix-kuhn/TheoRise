@@ -72,3 +72,11 @@ def test_title_from_html():
 def test_sanitize_slug():
     assert scraper.sanitize_slug("  Foo Bar  ") == "Foo_Bar"
     assert scraper.sanitize_slug("a/b:c") == "a_b_c"
+
+
+def test_count_tokens_falls_back_when_bpe_data_is_unavailable(cfg, monkeypatch):
+    def unavailable(_encoding):
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr(scraper.tiktoken, "get_encoding", unavailable)
+    assert scraper.count_tokens("hello world", cfg) == 2

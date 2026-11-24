@@ -15,12 +15,16 @@ class AppError(Exception):
         status_code: int,
         code: str,
         message: str | None = None,
-        **details: object,
+        *,
+        details: dict[str, object] | None = None,
+        **extra: object,
     ) -> None:
+        # `details` is a reserved keyword used by callers that pass a prepared
+        # object; remaining keyword arguments become the details themselves.
+        self.details = details if details is not None else extra
         self.status_code = status_code
         self.code = code
         self.message = message or code
-        self.details = details
         super().__init__(self.message)
 
 
