@@ -37,6 +37,7 @@ src-backend/data/
 # Rust / Tauri
 src-tauri/target/
 src-tauri/gen/schemas/
+docs/
 
 # Editor directories and files
 .vscode/*

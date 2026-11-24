@@ -43,6 +43,7 @@ impl Drop for ManagedBackend {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct BackendInfo {
     base_url: String,
     token: String,
@@ -131,26 +132,14 @@ fn read_port(child: &mut Child) -> Result<u16, String> {
     Ok(port)
 }
 
-fn spawn_dev_backend(data_dir: &Path, token: &str) -> Result<(Child, u16), String> {
+fn spawn_dev_backend(token: &str) -> Result<(Child, u16), String> {
     let python = resolve_dev_python()?;
     let backend_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("src-backend");
-    let data_dir = data_dir
-        .to_str()
-        .ok_or_else(|| "data directory is not valid UTF-8".to_string())?;
 
     let mut child = Command::new(&python)
-        .args([
-            "-m",
-            "app",
-            "--port",
-            "0",
-            "--token",
-            token,
-            "--data-dir",
-            data_dir,
-        ])
+        .args(["-m", "app", "--port", "0", "--token", token])
         .current_dir(&backend_dir)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
@@ -162,11 +151,10 @@ fn spawn_dev_backend(data_dir: &Path, token: &str) -> Result<(Child, u16), Strin
 }
 
 fn spawn_sidecar_backend(data_dir: &Path, token: &str) -> Result<(Child, u16), String> {
-    let binary = std::env::var("POC_BACKEND_BINARY")
-        .map_err(|_| {
-            "production mode requires POC_BACKEND_BINARY (sidecar packaging lands in increment 13)"
-                .to_string()
-        })?;
+    let binary = std::env::var("POC_BACKEND_BINARY").map_err(|_| {
+        "production mode requires POC_BACKEND_BINARY (sidecar packaging lands in increment 13)"
+            .to_string()
+    })?;
     let data_dir = data_dir
         .to_str()
         .ok_or_else(|| "data directory is not valid UTF-8".to_string())?;
@@ -182,18 +170,23 @@ fn spawn_sidecar_backend(data_dir: &Path, token: &str) -> Result<(Child, u16), S
     Ok((child, port))
 }
 
-fn spawn_backend(data_dir: &Path, token: &str) -> Result<(Child, u16), String> {
-    let mode = std::env::var("POC_BACKEND_MODE").unwrap_or_else(|_| {
+fn backend_mode() -> String {
+    std::env::var("POC_BACKEND_MODE").unwrap_or_else(|_| {
         if cfg!(debug_assertions) {
             "dev".to_string()
         } else {
             "prod".to_string()
         }
-    });
+    })
+}
 
-    match mode.as_str() {
-        "prod" => spawn_sidecar_backend(data_dir, token),
-        _ => spawn_dev_backend(data_dir, token),
+fn spawn_backend(app: &AppHandle, token: &str) -> Result<(Child, u16), String> {
+    match backend_mode().as_str() {
+        "prod" => {
+            let data_dir = app.path().app_data_dir().map_err(|err| err.to_string())?;
+            spawn_sidecar_backend(&data_dir, token)
+        }
+        _ => spawn_dev_backend(token),
     }
 }
 
@@ -207,14 +200,11 @@ async fn start_backend(
     }
 
     let token = uuid::Uuid::new_v4().simple().to_string();
-    let data_dir = app.path().app_data_dir().map_err(|err| err.to_string())?;
-
     let spawn_token = token.clone();
-    let (child, port) = tauri::async_runtime::spawn_blocking(move || {
-        spawn_backend(&data_dir, &spawn_token)
-    })
-    .await
-    .map_err(|err| format!("backend startup task failed: {err}"))??;
+    let (child, port) =
+        tauri::async_runtime::spawn_blocking(move || spawn_backend(&app, &spawn_token))
+            .await
+            .map_err(|err| format!("backend startup task failed: {err}"))??;
 
     let mut guard = state
         .inner
@@ -266,4 +256,22 @@ pub fn run() {
             app_handle.state::<ManagedBackend>().stop();
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BackendInfo;
+
+    #[test]
+    fn backend_info_uses_camel_case_json_keys() {
+        let info = BackendInfo {
+            base_url: "http://127.0.0.1:1234".to_string(),
+            token: "secret".to_string(),
+        };
+
+        let value = serde_json::to_value(info).expect("backend info should serialize");
+        assert_eq!(value["baseUrl"], "http://127.0.0.1:1234");
+        assert!(value.get("base_url").is_none());
+        assert_eq!(value["token"], "secret");
+    }
 }

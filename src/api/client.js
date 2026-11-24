@@ -22,7 +22,7 @@ export async function getBackendInfo() {
       await invoke("start_backend");
       const info = await invoke("get_backend_info");
       return {
-        baseUrl: String(info.baseUrl).replace(/\/+$/, ""),
+        baseUrl: String(info.baseUrl ?? info.base_url ?? "").replace(/\/+$/, ""),
         token: String(info.token ?? ""),
       };
     })();

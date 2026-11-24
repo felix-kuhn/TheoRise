@@ -1,10 +1,9 @@
 # Research Assistant (PoC)
 
 Offline-capable desktop research app: a Tauri shell (Rust) with a React
-frontend and a local FastAPI backend. The backend hydrates and stores theory
+frontend and a local FastAPI backend. Currently, the backend hydrates and stores theory
 pages from [is.theorizeit.org](https://is.theorizeit.org); document ingestion,
-linking, retrieval, and the knowledge graph are added in later increments
-(see `docs/plan/`).
+linking, retrieval, and the knowledge graph are added in later increments.
 
 ## Layout
 
