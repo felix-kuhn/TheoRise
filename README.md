@@ -1,4 +1,4 @@
-# Research Assistant (PoC)
+# TheoRise
 
 Offline-capable desktop research app: a Tauri shell (Rust) with a React
 frontend and a local FastAPI backend. Currently, the backend hydrates and stores theory
