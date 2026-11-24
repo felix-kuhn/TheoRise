@@ -1,10 +1,12 @@
 """Application context and FastAPI dependency wiring."""
 from __future__ import annotations
 
+import hashlib
 import json
 import secrets
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from fastapi import Request
 
@@ -12,6 +14,11 @@ from .config import default_data_dir, load_config
 from .gateway.gateway import Gateway
 from .jobs.queue import JobRegistry
 from .services.config import ConfigService
+from .stores.graph.in_memory import InMemoryGraphStore
+from .stores.graph.ladybug import LadybugGraphStore
+from .stores.interfaces import GraphStore, VectorStore
+from .stores.vector.in_memory import InMemoryVectorStore
+from .stores.vector.lance import LanceVectorStore
 
 
 class AppContext:
@@ -30,9 +37,25 @@ class AppContext:
         self.config_service = ConfigService(self.data_dir)
         self.gateway = Gateway(self.config_service)
         self.jobs = JobRegistry()
+        self.store_backend = self.cfg.store_backend
+        self.vector_store = _make_vector_store(self.store_backend, self.data_dir)
+        self.graph_store = _make_graph_store(self.store_backend, self.data_dir)
+        self.graph_store.init_schema()
+        stored = self.config_service.runtime_store.load_config()
+        embedding = stored.embedding if stored is not None else None
+        self.vector_dimensions = embedding.dimensions if embedding else None
+        self.vector_fingerprint = _embedding_fingerprint(embedding) if embedding else None
+        if self.vector_dimensions:
+            self.vector_store.ensure(self.vector_dimensions, self.vector_fingerprint or "")
         self.auth_token = auth_token or secrets.token_urlsafe(32)
         # file path -> (mtime, token count); recomputed when the file changes
         self._token_cache: dict[Path, tuple[float, int]] = {}
+
+    def schema_versions(self) -> dict[str, list[int]]:
+        """Applied SQLite migration versions, for diagnostics and status."""
+        with self.config_service.runtime_store.db.connect() as conn:
+            rows = conn.execute("SELECT version FROM schema_migrations ORDER BY version")
+            return {"sqlite": [int(row["version"]) for row in rows]}
 
     def invalidate_token_cache(self) -> None:
         self._token_cache.clear()
@@ -87,3 +110,31 @@ def get_config_service(request: Request) -> ConfigService:
 
 def get_gateway(request: Request) -> Gateway:
     return request.app.state.ctx.gateway
+
+
+def get_vector_store(request: Request) -> VectorStore:
+    return request.app.state.ctx.vector_store
+
+
+def get_graph_store(request: Request) -> GraphStore:
+    return request.app.state.ctx.graph_store
+
+
+def _make_vector_store(backend: str, data_dir: str | Path) -> VectorStore:
+    if backend == "inmemory":
+        return InMemoryVectorStore()
+    return LanceVectorStore(data_dir)
+
+
+def _make_graph_store(backend: str, data_dir: str | Path) -> GraphStore:
+    if backend == "inmemory":
+        return InMemoryGraphStore()
+    return LadybugGraphStore(data_dir)
+
+
+def _embedding_fingerprint(embedding: Any) -> str:
+    raw = (
+        f"{embedding.base_url}|{embedding.model}|{embedding.dimensions}|"
+        f"{embedding.query_prefix}|{embedding.document_prefix}"
+    )
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()

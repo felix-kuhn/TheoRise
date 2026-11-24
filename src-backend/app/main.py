@@ -1,4 +1,11 @@
-"""FastAPI application entry point (also used by `uvicorn app.main:app`)."""
+"""FastAPI application factory.
+
+The backend is launched either through the CLI (``python -m app``, used by the
+Tauri sidecar) or through uvicorn's factory mode
+(``uvicorn app.main:create_app --factory``). The factory avoids creating an
+``AppContext`` at import time, which would otherwise open the graph store and
+hold its file lock before the chosen data directory is known.
+"""
 from __future__ import annotations
 
 from fastapi import FastAPI
@@ -38,6 +45,3 @@ def create_app(
     )
     register_error_handlers(app)
     return app
-
-
-app = create_app()

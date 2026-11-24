@@ -4,4 +4,4 @@ set -euo pipefail
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate poc-backend
 cd "$(dirname "$0")/.."
-exec python -m uvicorn app.main:app --host 127.0.0.1 --port "${THEORIES_PORT:-8766}" --reload
+exec python -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port "${THEORIES_PORT:-8766}" --reload

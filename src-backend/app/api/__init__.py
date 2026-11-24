@@ -24,6 +24,7 @@ from .health import router as health_router
 from .jobs import router as jobs_router
 from .links import router as links_router
 from .search import router as search_router
+from .stores import router as stores_router
 from .wiki import router as wiki_router
 
 api_router = APIRouter(dependencies=[Depends(require_auth)])
@@ -38,3 +39,4 @@ api_router.include_router(search_router, prefix="/v1/search", tags=["search"])
 api_router.include_router(graph_router, prefix="/v1/graph", tags=["graph"])
 api_router.include_router(links_router, prefix="/v1/links", tags=["links"])
 api_router.include_router(eval_router, prefix="/v1/eval", tags=["eval"])
+api_router.include_router(stores_router, prefix="/api/stores", tags=["stores"])

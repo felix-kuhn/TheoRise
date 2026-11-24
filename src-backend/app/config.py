@@ -32,6 +32,7 @@ class TokenConfig(BaseModel):
 class AppConfig(BaseModel):
     theories: TheoriesConfig = Field(default_factory=TheoriesConfig)
     tokens: TokenConfig = Field(default_factory=TokenConfig)
+    store_backend: str = "auto"
 
 
 def default_data_dir() -> Path:
@@ -49,4 +50,6 @@ def load_config(data_dir: Path | str | None = None) -> AppConfig:
         cfg.theories.base_url = env["THEORIES_BASE_URL"].rstrip("/")
     if env.get("THEORIES_TIKTOKEN_ENCODING"):
         cfg.tokens.encoding = env["THEORIES_TIKTOKEN_ENCODING"]
+    if env.get("STORE_BACKEND"):
+        cfg.store_backend = env["STORE_BACKEND"]
     return cfg
